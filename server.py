@@ -1,7 +1,7 @@
 from socket import *
 import os
 
-port = 9028
+port = 9038
 
 def createServer():
     serversocket = socket(AF_INET, SOCK_STREAM)
@@ -20,11 +20,11 @@ def createServer():
 
             file_requested = rd.split(' ')[1]
             if file_requested == "/":
-                # data = "HTTP/1.1 200 OK\r\n"
-                # data += "Content-Type: text/html; charset=utf-8\r\n"
-                # data += "\r\n"
-                # data += "<html><body><h1>Hello World</h1></body></html>\r\n\r\n"
-                # print("Server Working: Root")
+                data = "HTTP/1.1 200 OK\r\n"
+                data += "Content-Type: text/html; charset=utf-8\r\n"
+                data += "\r\n"
+                data += "<html><body><h1>Hello World</h1></body></html>\r\n\r\n"
+                print("Server Working: Root")
                 
                 # Tentativa de jogar um arquivo
                 # filename = "index.html"
@@ -32,10 +32,11 @@ def createServer():
                 # data = file.read()
                 # print(data)
 
+            elif file_requested == "/download":
                 data = "HTTP/1.1 200 OK\r\n"
                 data += "Content-Type: application/octet-stream; \r\n"
                 data += "\r\n"
-                data += open("./file.txt", encoding="ISO-8859-1").read()
+                data += open('./file.txt', 'r').read()
                 # data += "<html><body><h1>Hello World</h1></body></html>\r\n\r\n"
                 # print("Server Working: Root")
 
