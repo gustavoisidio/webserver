@@ -1,74 +1,45 @@
 from socket import *
-import os
+from os import listdir
+from os.path import isfile
+import urllib.parse
 
-port = 9038
+port = 8082
 
 def createServer():
     serversocket = socket(AF_INET, SOCK_STREAM)
     
-    try:
-        serversocket.bind(('localhost',port))
-        serversocket.listen(5)
-        BUFFER_SIZE = 4096 # send 4096 bytes each time step
-        
-        while(1):
+    
+    serversocket.bind(('localhost',port))
+    serversocket.listen(5)
+    while(1):
+        try:
             (clientsocket, address) = serversocket.accept()
 
             rd = clientsocket.recv(5000).decode()
             pieces = rd.split("\n")
             if ( len(pieces) > 0 ) : print(pieces[0])
 
-            file_requested = rd.split(' ')[1]
-            if file_requested == "/":
-                data = "HTTP/1.1 200 OK\r\n"
-                data += "Content-Type: text/html; charset=utf-8\r\n"
-                data += "\r\n"
-                data += "<html><body><h1>Hello World</h1></body></html>\r\n\r\n"
-                print("Server Working: Root")
-                
-                # Tentativa de jogar um arquivo
-                # filename = "index.html"
-                # file = open(filename, "r")
-                # data = file.read()
-                # print(data)
+            file_requested = rd.split(' ')[1][1:]                             # Captura somente a parte pós '/' que forma o nome do arquivo
+            file_requested = urllib.parse.unquote(file_requested).strip(' ')  # Decodifica a codificação da url
+            print(file_requested)
 
-            elif file_requested == "/download":
+            if file_requested in filter(isfile, listdir()):                   # Compara o nome do arquivo pedido na url com os nomes dos arquivos no servidor
                 data = "HTTP/1.1 200 OK\r\n"
-                data += "Content-Type: application/octet-stream; \r\n"
-                data += "\r\n"
-                data += open('./file.txt', 'r').read()
-                # data += "<html><body><h1>Hello World</h1></body></html>\r\n\r\n"
-                # print("Server Working: Root")
-
-            elif file_requested == "/professor":
-                data = "HTTP/1.1 200 OK\r\n"
-                data += "Content-Type: text/html; charset=utf-8\r\n"
-                data += "\r\n"
-                data += "<html><body><h1>Andson Marreiros Balieiro</h1></body></html>\r\n\r\n"
-                # print("Server Working: Professor")
-
-            elif file_requested == "/monitor":
-                data = "HTTP/1.1 200 OK\r\n"
-                data += "Content-Type: text/html; charset=utf-8\r\n"
-                data += "\r\n"
-                data += "<html><body><h1>Dario</h1></body></html>\r\n\r\n"
-                # print("Server Working: Monitor")
-
+                data += "Accept-Ranges: bytes\r\n\r\n"
+                print('=========||' + 'Serving ' + file_requested + '||=========')  # Se estiver presente o arquivo é enviado
+                clientsocket.sendall(data.encode('utf-8') + open('./' + file_requested, 'rb').read())
             else:
-                data = "HTTP/1.1 404 page not found\r\n"
-                data += "Content-Type: text/html; charset=utf-8\r\n"
-                data += "\r\n"
-                data += "<html><body><h1>404</h1><h4>Page not found</h4></body></html>\r\n\r\n"
-                # print("File not found. Serving 404 page.")
+                data = "HTTP/1.1 404 Not Found\r\n"
+                data += "Content-Type:; charset=utf-8\r\n\r\n"
+                print('=========||' + 'Serving 404 Not Found' + '||=========')       # Caso contrário é servida uma página de erro 404
+                clientsocket.sendall(data.encode('utf-8') + "<html><body><h1>404</h1><h4>Page not found</h4></body></html>\r\n\r\n".encode('utf-8'))
             
-            clientsocket.send(data.encode())
-            clientsocket.close()
-            
-
-    except KeyboardInterrupt :
-        clientsocket.shutdown(SHUT_WR)
-
+            clientsocket.close();
+        except:
+            continue
+    
     serversocket.close()
+    
 
 print("Access http://localhost:" + str(port))
 createServer()
